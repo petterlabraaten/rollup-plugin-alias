@@ -1,77 +1,125 @@
-import path from 'path';
-import fs from 'fs';
-
+'use strict';
+function _interopDefault(ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
+var path = _interopDefault(require('path'));
+var fs = _interopDefault(require('fs'));
 // Helper functions
-const noop = () => null;
-const matches = (key, importee) => {
-  if (importee.length < key.length) {
-    return false;
-  }
-  if (importee === key) {
-    return true;
-  }
-  const importeeStartsWithKey = (importee.indexOf(key) === 0);
-  const importeeHasSlashAfterKey = (importee.substring(key.length)[0] === '/');
-  return importeeStartsWithKey && importeeHasSlashAfterKey;
+var noop = function () {
+    return null;
 };
-const endsWith = (needle, haystack) => haystack.slice(-needle.length) === needle;
-const isFilePath = id => /^\.?\//.test(id);
-const exists = uri => {
-  try {
-    return fs.statSync(uri).isFile();
-  } catch (e) {
-    return false;
-  }
+var matches = function (key, importee) {
+    if (importee.length < key.length) {
+        return false;
+    }
+    if (importee === key) {
+        return true;
+    }
+    var importeeStartsWithKey = importee.indexOf(key) === 0;
+    var importeeHasSlashAfterKey = importee.substring(key.length)[0] === '/';
+    return importeeStartsWithKey && importeeHasSlashAfterKey;
+};
+var endsWith = function (needle, haystack) {
+    return haystack.slice(-needle.length) === needle;
+};
+var isFilePath = function (id) {
+    return (/^\.?\//.test(id)
+    );
+};
+var exists = function (uri) {
+    try {
+        return fs.statSync(uri).isFile();
+    } catch (e) {
+        return false;
+    }
+};
+var fileExists = function (uri) {
+    try {
+        return fs.statSync(uri).isFile();
+    } catch (e) {
+        return false;
+    }
+};
+var directoryExists = function (uri) {
+    try {
+        return fs.statSync(uri).isDirectory();
+    } catch (e) {
+        return false;
+    }
 };
 
-export default function alias(options = {}) {
-  const hasResolve = Array.isArray(options.resolve);
-  const resolve = hasResolve ? options.resolve : ['.js'];
-  const aliasKeys = hasResolve ?
-                      Object.keys(options).filter(k => k !== 'resolve') : Object.keys(options);
 
-  // No aliases?
-  if (!aliasKeys.length) {
+function alias() {
+    var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+    var hasResolve = Array.isArray(options.resolve);
+    var resolve = hasResolve ? options.resolve : ['.js'];
+    var aliasKeys = hasResolve ? Object.keys(options).filter(function (k) {
+        return k !== 'resolve';
+    }) : Object.keys(options);
+    // No aliases?
+    if (!aliasKeys.length) {
+        return {
+            resolveId: noop
+        };
+    }
     return {
-      resolveId: noop,
+        resolveId: function (importee, importer) {
+            // First match is supposed to be the correct one
+            var toReplace = aliasKeys.find(function (key) {
+                return matches(key, importee);
+            });
+            if (!toReplace) {
+                return null;
+            }
+            var entry = options[toReplace];
+            var updatedId = importee.replace(toReplace, entry);
+
+            console.log("updatedId = " + updatedId);
+            if (fileExists(updatedId)) {
+                console.log("file exists with no mods");
+                return updatedId;
+            }
+
+            if (fileExists(updatedId + ".js")) {
+                console.log("file with .js exists");
+                return updatedId + ".js";
+            }
+
+            if (directoryExists(updatedId)) {
+                console.log("directory exists");
+                if (fileExists(updatedId + "/index.js")) {
+                    console.log("dir with index.js exists");
+                    return updatedId + "/index.js";
+                } else {
+                    console.log("not index.js exists");
+                }
+            }
+
+            if (isFilePath(updatedId)) {
+
+                console.log("it exists!");
+
+                var directory = path.dirname(importer);
+
+                console.log("directory =  " + directory);
+
+                // Resolve file names
+                var filePath = path.resolve(directory, updatedId);
+                var match = resolve.map(function (ext) {
+                    return '' + filePath + ext;
+                }).find(exists);
+                if (match) {
+                    return match;
+                }
+                // To keep the previous behaviour we simply return the file path
+                // with extension
+                if (endsWith('.js', filePath)) {
+                    return filePath;
+                }
+                return filePath + '.js';
+            }
+
+            console.log("not a file path");
+            return updatedId; // + "/index.js";
+        }
     };
-  }
-
-  return {
-    resolveId(importee, importer) {
-      // First match is supposed to be the correct one
-      const toReplace = aliasKeys.find(key => matches(key, importee));
-
-      if (!toReplace) {
-        return null;
-      }
-
-      const entry = options[toReplace];
-
-      const updatedId = importee.replace(toReplace, entry);
-
-      if (isFilePath(updatedId)) {
-        const directory = path.dirname(importer);
-
-        // Resolve file names
-        const filePath = path.resolve(directory, updatedId);
-        const match = resolve.map(ext => `${filePath}${ext}`)
-                            .find(exists);
-
-        if (match) {
-          return match;
-        }
-
-        // To keep the previous behaviour we simply return the file path
-        // with extension
-        if (endsWith('.js', filePath)) {
-          return filePath;
-        }
-
-        return filePath + '.js';
-      }
-
-      return updatedId;
-    },
-  };
 }
+module.exports = alias;
