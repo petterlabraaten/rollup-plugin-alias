@@ -15,7 +15,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/frostney/rollup-plugin-alias.git"
+    "url": "git+https://github.com/petterlabraaten/rollup-plugin-alias.git"
   },
   "keywords": [
     "rollup",
@@ -30,9 +30,9 @@
   "author": "Johannes Stein",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/frostney/rollup-plugin-alias/issues"
+    "url": "https://github.com/petterlabraaten/rollup-plugin-alias/issues"
   },
-  "homepage": "https://github.com/frostney/rollup-plugin-aliar#readme",
+  "homepage": "https://github.com/petterlabraaten/rollup-plugin-aliar#readme",
   "devDependencies": {
     "ava": "^0.12.0",
     "babel-preset-es2015-loose-rollup": "^7.0.0",
